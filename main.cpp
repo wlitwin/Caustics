@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Everything's O.K., so let's start rendering
-	glfwSetWindowTitle("Caustic Demo");
+	glfwSetWindowTitle("Caustics Demo");
 
 	while (glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC))
 	{
