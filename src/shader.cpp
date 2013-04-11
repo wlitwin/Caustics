@@ -27,6 +27,10 @@ Shader::Shader(const string& vert_file, const string& frag_file) :
 
 Shader::~Shader()
 {
+	if (m_program != 0)
+	{
+		glDeleteProgram(m_program);
+	}
 }
 
 //=============================================================================
