@@ -2,13 +2,26 @@ CXXFLAGS=-Wall -Wextra -DGL_GLEXT_PROTOTYPES
 LFLAGS=-lglfw
 CXX=g++
 
-SRC_FILES=main.cpp shader.cpp application.cpp
+BIN_DIR=./bin
+OBJ_DIR=obj
 
-build:
-	$(CXX) $(CXXFLAGS) $(SRC_FILES) $(LFLAGS) -o ./bin/caustics
+OBJ_FILES=$(shell find src/ -name '*.cpp' | sed -e 's/^\(.*\).cpp$$/obj\/\1.o/g')
+
+#==============================================================================
+# RULES
+#==============================================================================
+
+$(OBJ_DIR)/%.o : %.cpp
+	$(shell mkdir -p $(dir $@))
+	@$(CXX) $(CXXFLAGS) -c $^ -o $@
+
+build: $(OBJ_FILES)
+	@$(CXX) $(OBJ_FILES) $(LFLAGS) -o $(BIN_DIR)/caustics
+	@echo Finished
 
 run: build
-	./bin/caustics
+	$(BIN_DIR)/caustics
 
 clean:
-	/bin/rm ./bin/caustics
+	/bin/rm -f $(BIN_DIR)/caustics
+	/bin/rm -rf $(OBJ_DIR)/*
