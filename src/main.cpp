@@ -21,6 +21,10 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	// Window size
+	const int window_width  = 640;
+	const int window_height = 480;
+
 	// Change these to change what version of OpenGL to use
 	const int desired_major_version = 3;
 	const int desired_minor_version = 3;
@@ -32,7 +36,7 @@ int main(void)
 	glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Try to create the context and open the window
-	if (!glfwOpenWindow(640, 480, 8, 8, 8, 8, 24, 0, GLFW_WINDOW))
+	if (!glfwOpenWindow(window_width, window_height, 8, 8, 8, 8, 24, 0, GLFW_WINDOW))
 	{
 		cerr << "Failed to create an OpenGL context\n";
 		glfwTerminate();
@@ -81,6 +85,12 @@ int main(void)
 	// Everything's O.K., so let's start rendering
 	glfwSetWindowTitle("Caustics Demo");
 
+	// Center the window
+	GLFWvidmode video_mode;
+	glfwGetDesktopMode(&video_mode);
+	glfwSetWindowPos((video_mode.Width - window_width) / 2,
+					 (video_mode.Height - window_height) / 2);
+	
 	// Create the application
 	Application* app = new Application();
 	app->Initialize();
