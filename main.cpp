@@ -3,6 +3,8 @@
 #include <cstdlib>  // For EXIT_SUCCESS/FAILURE
 #include <iostream> // For cout/cerr
 
+#include "application.hpp"
+
 using std::cerr;
 using std::cout;
 
@@ -12,7 +14,7 @@ using std::cout;
  * for you. It also abstracts a lot of basic functions
  * like keyboard and mouse input for you.
  */
-int main(int argc, char* argv[])
+int main(void)
 {
 	if (!glfwInit()) 
 	{
@@ -79,11 +81,29 @@ int main(int argc, char* argv[])
 	// Everything's O.K., so let's start rendering
 	glfwSetWindowTitle("Caustics Demo");
 
+	// Create the application
+	Application* app = new Application();
+	app->Initialize();
+
+	double previous_time = glfwGetTime();
 	while (glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC))
 	{
+		// Get the elapsed time since the last update
+		double current_time = glfwGetTime();
+		const double delta_time = current_time - previous_time;
+		previous_time = current_time;
+
+		// Update the application's state
+		app->Update(delta_time);
+
+		// Render the application state
+		app->Render();
+
 		// Put the render on the screen
 		glfwSwapBuffers();
 	}
+
+	delete app;
 
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
