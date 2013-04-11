@@ -106,7 +106,7 @@ int main(void)
 		// Update the application's state
 		app->Update(delta_time);
 
-		// Render the application state
+		// Render the application's state
 		app->Render();
 
 		// Put the render on the screen

@@ -12,6 +12,7 @@ OBJ_FILES=$(shell find src/ -name '*.cpp' | sed -e 's/^\(.*\).cpp$$/obj\/\1.o/g'
 #==============================================================================
 
 $(OBJ_DIR)/%.o : %.cpp
+	@echo Compiling $^
 	$(shell mkdir -p $(dir $@))
 	@$(CXX) $(CXXFLAGS) -c $^ -o $@
 
@@ -24,4 +25,4 @@ run: build
 
 clean:
 	/bin/rm -f $(BIN_DIR)/caustics
-	/bin/rm -rf $(OBJ_DIR)/*.o
+	/bin/rm -rf `find $(OBJ_DIR)/ -name '*.o'`
