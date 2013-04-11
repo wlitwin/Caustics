@@ -24,4 +24,4 @@ run: build
 
 clean:
 	/bin/rm -f $(BIN_DIR)/caustics
-	/bin/rm -rf $(OBJ_DIR)/*
+	/bin/rm -rf $(OBJ_DIR)/*.o
