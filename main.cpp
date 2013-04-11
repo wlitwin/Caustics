@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 {
 	if (!glfwInit()) 
 	{
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	// Change these to change what version of OpenGL to use
