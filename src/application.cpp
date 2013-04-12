@@ -127,7 +127,7 @@ void Application::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 
 	// Setup the camera
-	glUseProgram(shaders.getProgram());
+	glUseProgram(shaders.GetProgram());
 	glUniformMatrix4fv(shaders.GetUniformLocation("proj"),
 						1, GL_FALSE, glm::value_ptr(camera->GetProj()));
 	glUniformMatrix4fv(shaders.GetUniformLocation("view"),

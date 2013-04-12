@@ -80,13 +80,13 @@ public:
 	 * Returns:
 	 *   True if everything worked, false if something went wrong.
 	 */
-	bool isValid() const;
+	bool IsValid() const;
 
 	/* Returns the OpenGL program object. Use in the call to glUseProgram().
 	 * If unable to successfully create a program object this method will
 	 * return 0.
 	 */
-	GLuint getProgram() const;
+	GLuint GetProgram() const;
 
 // Private class functions
 private: 

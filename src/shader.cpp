@@ -43,7 +43,7 @@ Shader::~Shader()
 // isValid
 //=============================================================================
 
-bool Shader::isValid() const
+bool Shader::IsValid() const
 {
 	return m_is_valid;
 }
@@ -52,7 +52,7 @@ bool Shader::isValid() const
 // getProgram
 //=============================================================================
 
-GLuint Shader::getProgram() const
+GLuint Shader::GetProgram() const
 {
 	return m_program;
 }
