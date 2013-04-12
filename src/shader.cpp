@@ -1,6 +1,3 @@
-/* Implementation of the shader class 
- */
-
 #include "shader.hpp"
 
 #include <fstream>
@@ -11,15 +8,24 @@ using std::string;
 using std::fstream;
 
 //=============================================================================
-// Constructor
+// Constructor(string, string)
 //=============================================================================
 
 Shader::Shader(const string& vert_file, const string& frag_file) :
 	m_program(0),
-	is_valid(false)
+	m_is_valid(false)
 {
-	is_valid = create_program(vert_file, frag_file);
+	m_is_valid = LoadShaders(vert_file, frag_file);
 }
+
+//=============================================================================
+// Constructor()
+//=============================================================================
+
+Shader::Shader() :
+	m_program(0),
+	m_is_valid(false)
+{ }
 
 //=============================================================================
 // Destructor
@@ -39,7 +45,7 @@ Shader::~Shader()
 
 bool Shader::isValid() const
 {
-	return is_valid;
+	return m_is_valid;
 }
 
 //=============================================================================
@@ -52,13 +58,42 @@ GLuint Shader::getProgram() const
 }
 
 //=============================================================================
-// create_program
+// GetUniformLocation
 //=============================================================================
 
-bool Shader::create_program(const string& vert_file, const string& frag_file)
+GLint Shader::GetUniformLocation(const std::string& name)
+{
+	if (m_uniforms.find(name) == m_uniforms.end() && m_program > 0)
+	{
+		// Try too look it up
+		GLint loc = glGetUniformLocation(m_program, name.c_str());
+		if (loc >= 0) 
+		{
+			m_uniforms[name] = loc;
+		} 
+		else 
+		{
+			std::cerr << "Warning: " << name << " uniform does not exist\n";
+		}
+
+		return loc;
+	} 
+	else 
+	{
+		return m_uniforms[name];
+	}
+}
+
+//=============================================================================
+// LoadShaders
+//=============================================================================
+
+bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
 {
 	if (m_program != 0)
 	{
+		// Clear the uniforms as well
+		m_uniforms.erase(m_uniforms.begin(), m_uniforms.end());
 		glDeleteProgram(m_program);
 		m_program = 0;
 	}
@@ -127,6 +162,7 @@ bool Shader::create_shader(GLenum type, const string& filename, GLuint& out_var)
 	// See if we could open the file
 	if (!file.is_open())
 	{
+		std::cerr << "Failed to open " << filename << "\n";
 		return false;
 	}
 
