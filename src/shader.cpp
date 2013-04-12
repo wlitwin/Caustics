@@ -63,7 +63,15 @@ GLuint Shader::getProgram() const
 
 GLint Shader::GetUniformLocation(const std::string& name)
 {
-	if (m_uniforms.find(name) == m_uniforms.end() && m_program > 0)
+	if (!IsValid()) 
+	{
+		return -1;
+	}
+
+	// m_program is guarenteed to be valid after this point
+	// (Unless someone called glDeleteProgram(shader.getProgram()),
+	//  but we assume that hasn't happend)
+	if (m_uniforms.find(name) == m_uniforms.end())
 	{
 		// Try too look it up
 		GLint loc = glGetUniformLocation(m_program, name.c_str());
