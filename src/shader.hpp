@@ -112,7 +112,6 @@ private:
 // Class Variables
 private: 
 	GLuint m_program; // The OpenGL program name
-	bool m_is_valid;  // Is the shader in a current valid state?
 	// Caches uniform location lookups
 	std::map<const std::string, GLint> m_uniforms;
 };

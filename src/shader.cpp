@@ -12,10 +12,9 @@ using std::fstream;
 //=============================================================================
 
 Shader::Shader(const string& vert_file, const string& frag_file) :
-	m_program(0),
-	m_is_valid(false)
+	m_program(0)
 {
-	m_is_valid = LoadShaders(vert_file, frag_file);
+	LoadShaders(vert_file, frag_file);
 }
 
 //=============================================================================
@@ -23,8 +22,7 @@ Shader::Shader(const string& vert_file, const string& frag_file) :
 //=============================================================================
 
 Shader::Shader() :
-	m_program(0),
-	m_is_valid(false)
+	m_program(0)
 { }
 
 //=============================================================================
@@ -45,7 +43,7 @@ Shader::~Shader()
 
 bool Shader::IsValid() const
 {
-	return m_is_valid;
+	return m_program > 0;
 }
 
 //=============================================================================
@@ -146,13 +144,13 @@ bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
 		glDetachShader(m_program, frag_shader);
 		glDeleteProgram(m_program);
 		m_program = 0;
-	}
+	} 
 
 	// The shader objects are no longer needed after they
 	// have been compiled into the program.
 	glDeleteShader(vert_shader);
 	glDeleteShader(frag_shader);
-	return status != GL_FALSE;
+	return status != GL_FALSE && m_program > 0;
 }
 
 //=============================================================================
