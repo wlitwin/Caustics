@@ -1,5 +1,5 @@
-CXXFLAGS=-Wall -Wextra -DGL_GLEXT_PROTOTYPES
-LFLAGS=-lglfw
+CXXFLAGS=-Wall -Wextra -DGL_GLEXT_PROTOTYPES -std=c++03 -pedantic -g
+LFLAGS=-lglfw -lGLEW
 CXX=g++
 
 BIN_DIR=./bin
