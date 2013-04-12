@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glfw.h>
 
 #include <cstdlib>  // For EXIT_SUCCESS/FAILURE
@@ -7,6 +8,17 @@
 
 using std::cerr;
 using std::cout;
+
+// Window size
+const int window_width  = 640;
+const int window_height = 480;
+
+// Change these to change what version of OpenGL to use
+const int desired_major_version = 3;
+const int desired_minor_version = 3;
+
+// The application that does all the updating/rendering
+Application* app = NULL;
 
 /* Setup the OpenGL context and window using GLFW. GLFW
  * is a very useful cross-platform library that will do
@@ -18,16 +30,9 @@ int main(void)
 {
 	if (!glfwInit()) 
 	{
+		cerr << "Failed to initialize GLFW\n";
 		exit(EXIT_FAILURE);
 	}
-
-	// Window size
-	const int window_width  = 640;
-	const int window_height = 480;
-
-	// Change these to change what version of OpenGL to use
-	const int desired_major_version = 3;
-	const int desired_minor_version = 3;
 
 	// Set the version of OpenGL we want to use
 	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, desired_major_version);	
@@ -43,9 +48,26 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	// We need to also initialize GLEW because it loads the entry
+	// points for the extension functions, like glGenVertexArray()
+	// and other functions that are required by a newer OpenGL
+	// context.
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK) 
+	{
+		cerr << "Failed to initialize GLEW\n";
+		exit(EXIT_FAILURE);
+	}
+
+	if (!GLEW_VERSION_3_3)
+	{
+		cerr << "Insufficient GLEW version\n";
+		exit(EXIT_FAILURE);
+	}
+
 	// Make sure we got the version of OpenGL we asked for
-	int v_major = glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR);
-	int v_minor = glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR);
+	const int v_major = glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR);
+	const int v_minor = glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR);
 
 	if (v_major < desired_major_version || 
 		v_minor < desired_minor_version) 
@@ -56,11 +78,12 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	// Check what we ended up with
 	cout << "OpenGL Context: " << v_major << "." << v_minor << "\n";
 
-	int forward_compat = glfwGetWindowParam(GLFW_OPENGL_FORWARD_COMPAT);
-	int opengl_context = glfwGetWindowParam(GLFW_OPENGL_PROFILE);
-	int debug_context  = glfwGetWindowParam(GLFW_OPENGL_DEBUG_CONTEXT);
+	const int forward_compat = glfwGetWindowParam(GLFW_OPENGL_FORWARD_COMPAT);
+	const int opengl_context = glfwGetWindowParam(GLFW_OPENGL_PROFILE);
+	const int debug_context  = glfwGetWindowParam(GLFW_OPENGL_DEBUG_CONTEXT);
 
 	if (forward_compat == GL_TRUE) 
 	{
@@ -82,7 +105,7 @@ int main(void)
 		cout << "Debug Context\n";
 	}
 
-	// Everything's O.K., so let's start rendering
+	// Do some more minor setup things
 	glfwSetWindowTitle("Caustics Demo");
 
 	// Center the window
@@ -92,9 +115,15 @@ int main(void)
 					 (video_mode.Height - window_height) / 2);
 	
 	// Create the application
-	Application* app = new Application();
-	app->Initialize();
+	app = new Application();
+	if (!app->Initialize(window_width, window_height))
+	{
+		std::cerr << "Application failed to initialize\n";
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
 
+	// Enter the actual update/render loop
 	double previous_time = glfwGetTime();
 	while (glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC))
 	{
@@ -104,7 +133,10 @@ int main(void)
 		previous_time = current_time;
 
 		// Update the application's state
-		app->Update(delta_time);
+		if (!app->Update(delta_time)) 
+		{
+			break;
+		}
 
 		// Render the application's state
 		app->Render();
