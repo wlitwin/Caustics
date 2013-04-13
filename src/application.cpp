@@ -1,6 +1,7 @@
 #include "application.hpp"
 
 #include <iostream>
+#include <GL/glfw.h>
 #include <glm/gtc/type_ptr.hpp>
 
 //=============================================================================
@@ -8,7 +9,9 @@
 //=============================================================================
 
 Application::Application() :
-	camera(NULL)
+	m_camera(NULL),
+	m_mouse_x(-1),
+	m_mouse_y(-1)
 {
 }
 
@@ -18,9 +21,9 @@ Application::Application() :
 
 Application::~Application()
 {
-	if (camera != NULL) 
+	if (m_camera != NULL) 
 	{
-		delete camera;
+		delete m_camera;
 	}
 }
 
@@ -31,14 +34,14 @@ Application::~Application()
 bool Application::Initialize(const int screen_width, const int screen_height)
 {
 	const float aspect_ratio = (float)screen_width/screen_height;
-	camera = new Camera(45.0f, aspect_ratio, 0.1f, 100.0f);
-	camera->LookAt(glm::vec3(2, 4, 4), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	m_camera = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
+	m_camera->LookAt(glm::vec3(2, 2, 4), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glViewport(0, 0, screen_width, screen_height);
 	glEnable(GL_DEPTH_TEST);
 
 	// Simple test box
-	box = new glm::vec3[6*6];
+	glm::vec3* box = new glm::vec3[6*6*2];
 	// Front
 	box[0] = glm::vec3(-0.5f, -0.5f, 0.5f);
 	box[1] = glm::vec3( 0.5f, -0.5f, 0.5f);
@@ -93,28 +96,143 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 	box[34] = glm::vec3(-0.5f, -0.5f,  0.5f);
 	box[35] = glm::vec3(-0.5f, -0.5f, -0.5f);
 
-	glGenVertexArrays(1, &vao);
+	float scale = 1.0f;
+	for (int i = 0; i < 36; ++i)
+	{
+		box[i] *= scale;
+	}
+
+	bool negate = true;
+
+	for (int i = 36; i < 42; ++i)
+	{
+		box[i] = glm::vec3(0, 0, 1);
+		if (negate) box[i] = -box[i];
+	}
+
+	for (int i = 42; i < 48; ++i)
+	{
+		box[i] = glm::vec3(0, -1, 0);
+		if (negate) box[i] = -box[i];
+	}
+
+	for (int i = 48; i < 54; ++i)
+	{
+		box[i] = glm::vec3(1, 0, 0);
+		if (negate) box[i] = -box[i];
+	}
+
+	for (int i = 54; i < 60; ++i)
+	{
+		box[i] = glm::vec3(-1, 0, 0);
+		if (negate) box[i] = -box[i];
+	}
+
+	for (int i = 60; i < 66; ++i)
+	{
+		box[i] = glm::vec3(0, 0, -1);
+		if (negate) box[i] = -box[i];
+	}
+
+	for (int i = 66; i < 72; ++i)
+	{
+		box[i] = glm::vec3(0, 1, 0);
+		if (negate) box[i] = -box[i];
+	}
+
+	// Box
+	glGenVertexArrays(1, &m_vao);
+	GLuint vbo;
 	glGenBuffers(1, &vbo);
 
-	glBindVertexArray(vao);
+	glBindVertexArray(m_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	
-	glBufferData(GL_ARRAY_BUFFER, 6*6*3*sizeof(float), box, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6*6*2*3*sizeof(float), box, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)(6*6*3*sizeof(float)));
 	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+	glfwGetMousePos(&m_mouse_x, &m_mouse_y);	
 
 	delete [] box;
 
-	return shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag");
+	return m_shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag");
 }
 
 //=============================================================================
 // Update 
 //=============================================================================
 
-bool Application::Update(const double delta)
+bool Application::Update(const double dt)
 {
+	if (glfwGetKey('W') == GLFW_PRESS)
+	{
+		m_camera->MoveForward(2.0f * dt);
+	}
+
+	if (glfwGetKey('A') == GLFW_PRESS)
+	{
+		m_camera->Strafe(-2.0f * dt);
+	}
+
+	if (glfwGetKey('D') == GLFW_PRESS)
+	{
+		m_camera->Strafe(2.0f * dt);
+	}
+
+	if (glfwGetKey('S') == GLFW_PRESS)
+	{
+		m_camera->MoveForward(-2.0f * dt);
+	}
+
+	if (glfwGetKey('Q') == GLFW_PRESS)
+	{
+		m_camera->Roll(-45.0f * dt);
+	}
+
+	if (glfwGetKey('E') == GLFW_PRESS)
+	{
+		m_camera->Roll(45.0f * dt);
+	}
+
+	if (glfwGetKey('R') == GLFW_PRESS)
+	{
+		m_camera->Pitch(45.0f * dt);
+	}
+
+	if (glfwGetKey('F') == GLFW_PRESS)
+	{
+		m_camera->Pitch(-45.0f * dt);
+	}
+
+	if (glfwGetKey('T') == GLFW_PRESS)
+	{
+		m_camera->Yaw(45.0f * dt);
+	}
+
+	if (glfwGetKey('G') == GLFW_PRESS)
+	{
+		m_camera->Yaw(-45.0f * dt);
+	}
+
+	// Get mouse delta
+	int new_mouse_x, new_mouse_y;
+	glfwGetMousePos(&new_mouse_x, &new_mouse_y);
+
+	const int delta_mouse_x = new_mouse_x - m_mouse_x;
+	const int delta_mouse_y = new_mouse_y - m_mouse_y;
+
+	m_camera->Yaw(delta_mouse_x * 2.0f * dt);
+	m_camera->Pitch(delta_mouse_y * 2.0f * dt);
+
+	m_mouse_x = new_mouse_x;
+	m_mouse_y = new_mouse_y;
+
 	return true;
 }
 
@@ -127,17 +245,17 @@ void Application::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 
 	// Setup the camera
-	glUseProgram(shaders.GetProgram());
-	glUniformMatrix4fv(shaders.GetUniformLocation("proj"),
-						1, GL_FALSE, glm::value_ptr(camera->GetProj()));
-	glUniformMatrix4fv(shaders.GetUniformLocation("view"),
-						1, GL_FALSE, glm::value_ptr(camera->GetView()));
+	glUseProgram(m_shaders.GetProgram());
+	glUniformMatrix4fv(m_shaders.GetUniformLocation("proj"),
+						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
+	glUniformMatrix4fv(m_shaders.GetUniformLocation("view"),
+						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
 
 	// Setup the object we're drawing
-	glUniformMatrix4fv(shaders.GetUniformLocation("model"),
+	glUniformMatrix4fv(m_shaders.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));
 
-	glBindVertexArray(vao);
+	glBindVertexArray(m_vao);
 	glDrawArrays(GL_TRIANGLES, 0, 6*6);
 
 	glBindVertexArray(0);

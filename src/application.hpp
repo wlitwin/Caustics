@@ -53,11 +53,11 @@ public:
 	void Render();
 
 private:
-	Shader shaders;
-	Camera* camera;
-	glm::vec3* box;
-	GLuint vao;
-	GLuint vbo;
+	Camera* m_camera;
+	int m_mouse_x;
+	int m_mouse_y;
+	Shader m_shaders;
+	GLuint m_vao;
 };
 
 #endif
