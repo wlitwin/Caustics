@@ -2,6 +2,7 @@
 #define _CAMERA_HPP_
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class Camera
 {
@@ -97,7 +98,7 @@ public:
 
 	/* Get the camera's view matrix.
 	 */
-	const glm::mat4& GetView() const;
+	const glm::mat4& GetView();
 
 	/* Get the camera's projection matrix.
 	 */
@@ -107,6 +108,9 @@ public:
 private:
 	glm::mat4 m_proj;
 	glm::mat4 m_view;
+	glm::vec3 m_pos;
+	glm::fquat m_rot;
+	glm::vec3 m_up;
 };
 
 #endif
