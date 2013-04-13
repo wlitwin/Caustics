@@ -4,14 +4,16 @@
 #include <cstdlib>  // For EXIT_SUCCESS/FAILURE
 #include <iostream> // For cout/cerr
 
+#include <sstream>
+
 #include "application.hpp"
 
 using std::cerr;
 using std::cout;
 
 // Window size
-const int window_width  = 640;
-const int window_height = 480;
+const int window_width  = 1280;
+const int window_height = 800;
 
 // Change these to change what version of OpenGL to use
 const int desired_major_version = 3;
@@ -124,6 +126,10 @@ int main(void)
 	}
 
 	// Enter the actual update/render loop
+	glfwSwapInterval(1); // Limit to 60Hz
+	int frames = 0;
+	double time_passed = 0;
+
 	double previous_time = glfwGetTime();
 	while (glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC))
 	{
@@ -143,6 +149,20 @@ int main(void)
 
 		// Put the render on the screen
 		glfwSwapBuffers();
+
+		// Frame rate calculation
+		time_passed += delta_time;
+		if (time_passed >= 1.0f)
+		{
+			std::stringstream fps;			
+			fps << "Caustics Demo (";
+			fps << frames << " fps)";
+			glfwSetWindowTitle(fps.str().c_str());
+
+			time_passed = 0;
+			frames = 0;
+		}
+		++frames;
 	}
 
 	delete app;
