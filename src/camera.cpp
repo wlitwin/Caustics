@@ -70,19 +70,7 @@ void Camera::Strafe(const float amount)
 
 void Camera::Roll(const float amount)
 {
-	// Code adapted from http://www.arcsynthesis.org/gltut/Positioning/Tutorial%2008.html
-
-	const float radians = amount * PIOVER180;
-	glm::vec3 axis(0.0f, 0.0f, 1.0f);
-
-	axis = axis * sinf(radians / 2.0f);
-	const float scalar = cosf(radians / 2.0f);
-
-	const glm::fquat offset(scalar, axis.x, axis.y, axis.z);
-
-	m_rot = offset * m_rot;
-	m_up = m_up * offset;
-	m_rot = glm::normalize(m_rot);
+	Rotate(0, 0, amount);
 }
 
 //=============================================================================
@@ -91,24 +79,7 @@ void Camera::Roll(const float amount)
 
 void Camera::Yaw(const float amount)
 {
-	// We keep a special up vector because if you keep
-	// doing Yaw -> Pitch -> Yaw -> Pitch the whole
-	// scene will Roll. This is because the Yaw is around
-	// the axis of a sphere. By maintaining a world based
-	// up vector we can avoid this rolling and only rotate
-	// the up vector when we actually roll. I'll try to
-	// come up with a better explanation of what's happening.
-
-	const float radians = amount * PIOVER180;
-	glm::vec3 axis(m_up);//0.0f, 1.0f, 0.0f);
-
-	axis = axis * sinf(radians / 2.0f);
-	const float scalar = cosf(radians / 2.0f);
-
-	const glm::fquat offset(scalar, axis.x, axis.y, axis.z);
-
-	m_rot = m_rot * offset;//offset * m_rot;
-	m_rot = glm::normalize(m_rot);
+	Rotate(amount, 0, 0);
 }
 
 //=============================================================================
@@ -117,16 +88,7 @@ void Camera::Yaw(const float amount)
 
 void Camera::Pitch(const float amount)
 {
-	const float radians = amount * PIOVER180;
-	glm::vec3 axis(1.0f, 0.0f, 0.0f);
-
-	axis = axis * sinf(radians / 2.0f);
-	const float scalar = cosf(radians / 2.0f);
-
-	const glm::fquat offset(scalar, axis.x, axis.y, axis.z);
-
-	m_rot = offset * m_rot;
-	m_rot = glm::normalize(m_rot);
+	Rotate(0, amount, 0);
 }
 
 //=============================================================================
@@ -135,21 +97,19 @@ void Camera::Pitch(const float amount)
 
 void Camera::Rotate(const float yaw, const float pitch, const float roll)
 {
-	if (yaw != 0.0f) 
+	glm::fquat q_yaw(glm::gtx::quaternion::angleAxis(yaw, 0.f, 1.f, 0.f));
+	glm::fquat q_pitch(glm::gtx::quaternion::angleAxis(pitch, 1.f, 0.f, 0.f));
+	glm::fquat q_roll(glm::gtx::quaternion::angleAxis(roll, 0.f, 0.f, -1.f));
+
+	if (roll == 0.0f)
 	{
-		Yaw(yaw);
+		// TODO - Fix rolling problem!
+		// We need to apply a corrective factor
 	}
 
-	if (pitch != 0.0f)
-	{
-		Pitch(pitch);
-	}
-
-
-	if (roll != 0.0f)
-	{
-		Roll(roll);
-	}
+	glm::fquat q_t= q_roll * q_pitch * q_yaw;
+	m_rot = q_t * m_rot;
+	m_rot = glm::normalize(m_rot);
 }
 
 //=============================================================================
