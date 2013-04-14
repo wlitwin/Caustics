@@ -33,6 +33,8 @@ Application::~Application()
 
 bool Application::Initialize(const int screen_width, const int screen_height)
 {
+	glfwDisable(GLFW_MOUSE_CURSOR);
+
 	const float aspect_ratio = (float)screen_width/screen_height;
 	m_camera = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
 	m_camera->LookAt(glm::vec3(2, 2, 4), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
