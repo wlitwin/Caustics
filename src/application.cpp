@@ -39,129 +39,40 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 	m_camera = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
 	m_camera->LookAt(glm::vec3(2, 2, 4), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
+	glDisable(GL_CULL_FACE);
+
 	glViewport(0, 0, screen_width, screen_height);
 	glEnable(GL_DEPTH_TEST);
 
-	// Simple test box
-	glm::vec3* box = new glm::vec3[6*6*2];
-	// Front
-	box[0] = glm::vec3(-0.5f, -0.5f, 0.5f);
-	box[1] = glm::vec3( 0.5f, -0.5f, 0.5f);
-	box[2] = glm::vec3( 0.5f,  0.5f, 0.5f);
+	box.NewMesh();
 
-	box[3] = glm::vec3( 0.5f,  0.5f, 0.5f);
-	box[4] = glm::vec3(-0.5f,  0.5f, 0.5f);
-	box[5] = glm::vec3(-0.5f, -0.5f, 0.5f);
+	// Front
+	box.AddQuad(glm::vec3(-0.5, -0.5, 0.5), glm::vec3( 0.5, -0.5, 0.5),
+				glm::vec3( 0.5,  0.5, 0.5), glm::vec3(-0.5,  0.5, 0.5));
+	
+	// Back
+	box.AddQuad(glm::vec3(0.5, -0.5, -0.5), glm::vec3(-0.5, -0.5, -0.5),
+				glm::vec3(-0.5, 0.5, -0.5), glm::vec3( 0.5,  0.5, -0.5));
 
 	// Top
-	box[6] = glm::vec3(-0.5f, 0.5f, -0.5f);
-	box[7] = glm::vec3(-0.5f, 0.5f,  0.5f);
-	box[8] = glm::vec3( 0.5f, 0.5f,  0.5f);
-
-	box[9]  = glm::vec3( 0.5f, 0.5f,  0.5f);
-	box[10] = glm::vec3( 0.5f, 0.5f, -0.5f);
-	box[11] = glm::vec3(-0.5f, 0.5f, -0.5f);
-
-	// Right
-	box[12] = glm::vec3(0.5f, -0.5f,  0.5f);
-	box[13] = glm::vec3(0.5f, -0.5f, -0.5f);
-	box[14] = glm::vec3(0.5f,  0.5f, -0.5f);
-
-	box[15] = glm::vec3(0.5f,  0.5f, -0.5f);
-	box[16] = glm::vec3(0.5f,  0.5f,  0.5f);
-	box[17] = glm::vec3(0.5f, -0.5f,  0.5f);
-
-	// Left
-	box[18] = glm::vec3(-0.5f, -0.5f, -0.5f);
-	box[19] = glm::vec3(-0.5f, -0.5f,  0.5f);
-	box[20] = glm::vec3(-0.5f,  0.5f,  0.5f);
-
-	box[21] = glm::vec3(-0.5f,  0.5f,  0.5f);
-	box[22] = glm::vec3(-0.5f,  0.5f, -0.5f);
-	box[23] = glm::vec3(-0.5f, -0.5f, -0.5f);
-
-	// Back
-	box[24] = glm::vec3( 0.5f, -0.5f, -0.5f);
-	box[25] = glm::vec3(-0.5f, -0.5f, -0.5f);
-	box[26] = glm::vec3(-0.5f,  0.5f, -0.5f);
-
-	box[27] = glm::vec3(-0.5f,  0.5f, -0.5f);
-	box[28] = glm::vec3( 0.5f,  0.5f, -0.5f);
-	box[29] = glm::vec3( 0.5f, -0.5f, -0.5f);
+	box.AddQuad(glm::vec3(-0.5, 0.5,  0.5), glm::vec3( 0.5, 0.5,  0.5),
+				glm::vec3( 0.5, 0.5, -0.5), glm::vec3(-0.5, 0.5, -0.5));
 
 	// Bottom
-	box[30] = glm::vec3(-0.5f, -0.5f, -0.5f);
-	box[31] = glm::vec3( 0.5f, -0.5f, -0.5f);
-	box[32] = glm::vec3( 0.5f, -0.5f,  0.5f);
+	box.AddQuad(glm::vec3( 0.5, -0.5,  0.5), glm::vec3(-0.5, -0.5,  0.5),
+				glm::vec3(-0.5, -0.5, -0.5), glm::vec3( 0.5, -0.5, -0.5));
 
-	box[33] = glm::vec3( 0.5f, -0.5f,  0.5f);
-	box[34] = glm::vec3(-0.5f, -0.5f,  0.5f);
-	box[35] = glm::vec3(-0.5f, -0.5f, -0.5f);
+	// Right
+	box.AddQuad(glm::vec3(0.5, -0.5,  0.5), glm::vec3(0.5, -0.5, -0.5),
+				glm::vec3(0.5,  0.5, -0.5), glm::vec3(0.5,  0.5,  0.5));
 
-	float scale = 1.0f;
-	for (int i = 0; i < 36; ++i)
-	{
-		box[i] *= scale;
-	}
+	// Left
+	box.AddQuad(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(-0.5, -0.5,  0.5),
+				glm::vec3(-0.5,  0.5,  0.5), glm::vec3(-0.5,  0.5, -0.5));
 
-	bool negate = true;
-
-	for (int i = 36; i < 42; ++i)
-	{
-		box[i] = glm::vec3(0, 0, 1);
-		if (negate) box[i] = -box[i];
-	}
-
-	for (int i = 42; i < 48; ++i)
-	{
-		box[i] = glm::vec3(0, -1, 0);
-		if (negate) box[i] = -box[i];
-	}
-
-	for (int i = 48; i < 54; ++i)
-	{
-		box[i] = glm::vec3(1, 0, 0);
-		if (negate) box[i] = -box[i];
-	}
-
-	for (int i = 54; i < 60; ++i)
-	{
-		box[i] = glm::vec3(-1, 0, 0);
-		if (negate) box[i] = -box[i];
-	}
-
-	for (int i = 60; i < 66; ++i)
-	{
-		box[i] = glm::vec3(0, 0, -1);
-		if (negate) box[i] = -box[i];
-	}
-
-	for (int i = 66; i < 72; ++i)
-	{
-		box[i] = glm::vec3(0, 1, 0);
-		if (negate) box[i] = -box[i];
-	}
-
-	// Box
-	glGenVertexArrays(1, &m_vao);
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
-
-	glBindVertexArray(m_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	
-	glBufferData(GL_ARRAY_BUFFER, 6*6*2*3*sizeof(float), box, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)(6*6*3*sizeof(float)));
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+	box.Finish();
 
 	glfwGetMousePos(&m_mouse_x, &m_mouse_y);	
-
-	delete [] box;
 
 	return m_shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag");
 }
@@ -257,10 +168,7 @@ void Application::Render()
 	glUniformMatrix4fv(m_shaders.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));
 
-	glBindVertexArray(m_vao);
-	glDrawArrays(GL_TRIANGLES, 0, 6*6);
-
-	glBindVertexArray(0);
+	box.Render();
 }
 
 //=============================================================================

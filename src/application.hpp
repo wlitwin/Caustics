@@ -2,6 +2,8 @@
 #define _APPLICATION_HPP_
 
 #include <GL/gl.h>
+
+#include "mesh.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
 
@@ -57,7 +59,7 @@ private:
 	int m_mouse_x;
 	int m_mouse_y;
 	Shader m_shaders;
-	GLuint m_vao;
+	Mesh box;
 };
 
 #endif
