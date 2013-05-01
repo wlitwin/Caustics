@@ -11,10 +11,12 @@ using std::fstream;
 // Constructor(string, string)
 //=============================================================================
 
-Shader::Shader(const string& vert_file, const string& frag_file) :
+Shader::Shader(const string& vert_file, 
+			   const string& frag_file,
+			   const string& geom_file) :
 	m_program(0)
 {
-	LoadShaders(vert_file, frag_file);
+	LoadShaders(vert_file, frag_file, geom_file);
 }
 
 //=============================================================================
@@ -94,7 +96,9 @@ GLint Shader::GetUniformLocation(const std::string& name)
 // LoadShaders
 //=============================================================================
 
-bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
+bool Shader::LoadShaders(const string& vert_file, 
+						 const string& frag_file,
+						 const string& geom_file)
 {
 	if (m_program != 0)
 	{
@@ -110,16 +114,34 @@ bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
 		return false;
 	}
 
+	GLuint geom_shader = 0;
+	if (geom_file != "" 
+		&& !create_shader(GL_GEOMETRY_SHADER, geom_file, geom_shader))
+	{
+		// Cleanup vertex shader object
+		glDeleteShader(vert_shader);
+		return false;
+	}
+
 	GLuint frag_shader = 0;
 	if (!create_shader(GL_FRAGMENT_SHADER, frag_file, frag_shader))
 	{
-		// Cleanup the vertex shader object
+		// Cleanup the vertex shader object & geometry shader object
 		glDeleteShader(vert_shader);
+		if (geom_shader != 0)
+		{
+			glDeleteShader(geom_shader);
+		}
 		return false;
 	}
 
 	m_program = glCreateProgram();
 	glAttachShader(m_program, vert_shader);
+	// Check for optional geometry shader
+	if (geom_shader != 0)
+	{
+		glAttachShader(m_program, geom_shader);
+	}
 	glAttachShader(m_program, frag_shader);
 
 	glLinkProgram(m_program);
@@ -141,6 +163,10 @@ bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
 
 		// Cleanup the program and shader variables
 		glDetachShader(m_program, vert_shader);
+		if (geom_shader != 0)
+		{
+			glDetachShader(m_program, geom_shader);
+		}
 		glDetachShader(m_program, frag_shader);
 		glDeleteProgram(m_program);
 		m_program = 0;
@@ -149,6 +175,10 @@ bool Shader::LoadShaders(const string& vert_file, const string& frag_file)
 	// The shader objects are no longer needed after they
 	// have been compiled into the program.
 	glDeleteShader(vert_shader);
+	if (geom_shader != 0)
+	{
+		glDeleteShader(geom_shader);
+	}
 	glDeleteShader(frag_shader);
 	return status != GL_FALSE && m_program > 0;
 }

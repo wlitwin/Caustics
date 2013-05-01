@@ -24,6 +24,7 @@ public:
 	 * Params:
 	 *   vert_file - Path to the vertex shader source file.
 	 *   frag_file - Path to the fragment shader source file.
+	 *   geom_file - An optional geometry shader source file.
 	 *
 	 * Errors will automatically be printed to standard error if any
 	 * problems were encountered.
@@ -32,7 +33,9 @@ public:
 	 * true. If it does not then something went wrong compiling the
 	 * shaders or linking the final program.
 	 */
-	Shader(const std::string& vert_file, const std::string& frag_file);
+	Shader(const std::string& vert_file, 
+		   const std::string& frag_file,
+		   const std::string& geom_file = "");
 
 	/* Allows creation of a shader object without any loaded OpenGL shaders.
 	 * Before using LoadShaders() must be called. It is recommended to call
@@ -50,6 +53,7 @@ public:
 	 * Params:
 	 *   vert_file - The path to the vertex shader source file.
 	 *   frag_file - The path to the fragment shader source file.
+	 *   geom_file - The path to the geometry shader source file (or "" if none)
 	 *
 	 * Returns:
 	 *   True if the OpenGL program was successfully created, false otherwise.
@@ -58,7 +62,8 @@ public:
 	 *   they are printed to standard error and m_program is set to 0.
 	 */
 	bool LoadShaders(const std::string& vert_file,
-					 const std::string& frag_file);
+					 const std::string& frag_file,
+					 const std::string& geom_file = "");
 
 	/* Get the location of the uniform variable for this shader program.
 	 * It caches the look ups so calling this method multiple times isn't
