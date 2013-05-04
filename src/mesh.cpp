@@ -38,7 +38,7 @@ void Mesh::cleanup()
 		m_vbo = 0;
 	}
 
-	mesh.clear();
+	m_mesh.clear();
 }
 
 //=============================================================================
@@ -51,7 +51,69 @@ void Mesh::NewMesh()
 }
 
 //=============================================================================
-// NewMesh
+// calcNormal(vector<float>, vec3)
+//=============================================================================
+
+static
+void addToVector(std::vector<float>& vec, const glm::vec3& p)
+{
+	vec.push_back(p.x);
+	vec.push_back(p.y);
+	vec.push_back(p.z);
+}
+
+//=============================================================================
+// addToVector(vector<float>, vec2)
+//=============================================================================
+
+static
+void addToVector(std::vector<float>& vec, const glm::vec2& p)
+{
+	vec.push_back(p.x);
+	vec.push_back(p.y);
+}
+
+//=============================================================================
+// calcNormal
+//=============================================================================
+
+static 
+glm::vec3 calcNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3)
+{
+	// Calculate the triangles normal vector
+	const glm::vec3 e1(p2 - p1);
+	const glm::vec3 e2(p3 - p1);
+	return glm::normalize(glm::cross(e1, e2));
+}
+
+//=============================================================================
+// AddTriangle(vec3, vec2, vec3, vec2, vec3, vec2)
+//=============================================================================
+	
+void Mesh::AddTriangle(const glm::vec3& p1, const glm::vec2& t1,
+			  		   const glm::vec3& p2, const glm::vec2& t2,
+					   const glm::vec3& p3, const glm::vec2& t3)
+{
+	assert(m_vao == 0);
+	assert(m_vbo == 0);
+
+	const glm::vec3 normal(calcNormal(p1, p2, p3));
+
+	addToVector(m_mesh, p1);
+	addToVector(m_mesh, normal);
+	addToVector(m_mesh, t1);
+
+	addToVector(m_mesh, p2);
+	addToVector(m_mesh, normal);
+	addToVector(m_mesh, t2);
+
+	addToVector(m_mesh, p3);
+	addToVector(m_mesh, normal);
+	addToVector(m_mesh, t3);
+}
+
+//=============================================================================
+// AddTriangle(vec3, vec3, vec3)
 //=============================================================================
 
 void Mesh::AddTriangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3)
@@ -59,31 +121,33 @@ void Mesh::AddTriangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3
 	assert(m_vao == 0);
 	assert(m_vbo == 0);
 
-	// Calculate the triangles normal vector
-	const glm::vec3 e1(p2 - p1);
-	const glm::vec3 e2(p3 - p1);
-	const glm::vec3 normal(glm::normalize(glm::cross(e1, e2)));
+	const glm::vec2 zero(0.0, 0.0);
 
-	// Add the triangle and normals to the buffer
-	mesh.push_back(p1);
-	mesh.push_back(normal);
-
-	mesh.push_back(p2);
-	mesh.push_back(normal);
-
-	mesh.push_back(p3);
-	mesh.push_back(normal);
+	AddTriangle(p1, zero, p2, zero, p3, zero);
 }
 
 //=============================================================================
-// NewMesh
+// AddQuad(vec3, vec2, vec3, vec2, vec3, vec2, vec3, vec2)
+//=============================================================================
+
+void Mesh::AddQuad(const glm::vec3& p1, const glm::vec2& t1,
+				   const glm::vec3& p2, const glm::vec2& t2,
+				   const glm::vec3& p3, const glm::vec2& t3,
+				   const glm::vec3& p4, const glm::vec2& t4)
+{
+	AddTriangle(p1, t1, p2, t2, p4, t4);
+	AddTriangle(p2, t2, p3, t3, p4, t4);
+}
+
+//=============================================================================
+// AddQuad(vec3, vec3, vec3, vec3)
 //=============================================================================
 
 void Mesh::AddQuad(const glm::vec3& p1, const glm::vec3& p2, 
 				   const glm::vec3& p3, const glm::vec3& p4)
 {
-	AddTriangle(p1, p2, p4);
-	AddTriangle(p2, p3, p4);
+	const glm::vec2 zero(0.0, 0.0);
+	AddQuad(p1, zero, p2, zero, p3, zero, p4, zero);
 }
 
 //=============================================================================
@@ -94,7 +158,7 @@ void Mesh::Finish()
 {
 	assert(m_vao == 0);
 	assert(m_vbo == 0);
-	assert(mesh.size() != 0);
+	assert(m_mesh.size() != 0);
 
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(1, &m_vbo);
@@ -105,16 +169,19 @@ void Mesh::Finish()
 	glBindVertexArray(m_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
-	size_t size = mesh.size() * sizeof(glm::vec3);
-	glBufferData(GL_ARRAY_BUFFER, size, &mesh[0], GL_STATIC_DRAW);
+	size_t size = m_mesh.size() * sizeof(float);
+	glBufferData(GL_ARRAY_BUFFER, size, &m_mesh[0], GL_STATIC_DRAW);
 	// Vertices
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), 0);
 	// Normals
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), (void*)sizeof(glm::vec3));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
+	// TexCoords
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
 
 	// These are on a per vertex array basis
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
 	// Unbind TODO - rebind what was previously bound?
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -135,7 +202,7 @@ void Mesh::Render()
 //	glEnableVertexAttribArray(0);
 //	glEnableVertexAttribArray(1);
 
-	glDrawArrays(GL_TRIANGLES, 0, mesh.size());
+	glDrawArrays(GL_TRIANGLES, 0, m_mesh.size());
 
 //	glDisableVertexAttribArray(1);
 //	glDisableVertexAttribArray(0);

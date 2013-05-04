@@ -16,8 +16,17 @@ public:
 
 	void AddTriangle(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3);
 
+	void AddTriangle(const glm::vec3& p1, const glm::vec2& t1,
+					 const glm::vec3& p2, const glm::vec2& t2,
+					 const glm::vec3& p3, const glm::vec2& t3);
+
 	void AddQuad(const glm::vec3& p1, const glm::vec3& p2, 
 				 const glm::vec3& p3, const glm::vec3& p4);
+
+	void AddQuad(const glm::vec3& p1, const glm::vec2& t1,
+				 const glm::vec3& p2, const glm::vec2& t2,
+				 const glm::vec3& p3, const glm::vec2& t3,
+				 const glm::vec3& p4, const glm::vec2& t4);
 
 	void Finish();
 
@@ -29,7 +38,7 @@ private:
 private:
 	GLuint m_vao;
 	GLuint m_vbo;
-	std::vector<glm::vec3> mesh;	
+	std::vector<float> m_mesh;
 };
 
 #endif
