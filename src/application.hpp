@@ -6,6 +6,7 @@
 #include "mesh.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
+#include "framebuffer.hpp"
 
 /* This class contains all of the update and render
  * logic for the application. Very basic.
@@ -50,16 +51,26 @@ public:
 	 */
 	bool Update(const double dt);
 
+	void SetResolution(const int width, const int height);
+
 	/* Render the scene.
 	 */
 	void Render();
 
 private:
+	int m_width;
+	int m_height;
+	double delta;
+	double time;
 	Camera* m_camera;
 	int m_mouse_x;
 	int m_mouse_y;
 	Shader m_shaders;
+	Shader m_surfaceShader;
+	GLuint m_texture;
 	Mesh box;
+	Mesh surface;
+	FrameBuffer m_framebuffer;
 };
 
 #endif
