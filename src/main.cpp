@@ -22,6 +22,18 @@ const int desired_minor_version = 3;
 // The application that does all the updating/rendering
 Application* app = NULL;
 
+/* Called when the window is resized. We need to tell the
+ * application that the window size has changed so it can
+ * update some internal information, like FBOs.
+ */
+void GLFWCALL window_resize(int width, int height)
+{
+	if (app != NULL)
+	{
+		app->SetResolution(width, height);
+	}
+}
+
 /* Setup the OpenGL context and window using GLFW. GLFW
  * is a very useful cross-platform library that will do
  * all the dirty work of setting up a window and context
@@ -66,6 +78,11 @@ int main(void)
 		cerr << "Insufficient GLEW version\n";
 		exit(EXIT_FAILURE);
 	}
+
+	// Clear the OpenGL error flag. GLEW apparently will still sometimes
+	// cause an INVALID_ENUM error after initialization. This can be ignored
+	// according to the GLEW documentation.
+	glGetError();
 
 	// Make sure we got the version of OpenGL we asked for
 	const int v_major = glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR);
@@ -124,6 +141,12 @@ int main(void)
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
+	// Make sure the application knows the current window size
+	app->SetResolution(window_width, window_height);
+
+	// Called when the user changes the window size
+	glfwSetWindowSizeCallback(window_resize);
 
 	// Enter the actual update/render loop
 	glfwSwapInterval(1); // Limit to 60Hz
