@@ -3,6 +3,8 @@
 
 #include <GL/gl.h>
 
+#define NUM_BUFFERS 2
+
 /* This class is a wrapper around FrameBuffer Objects in OpenGL. These
  * are used for off-screen render targets for use in things like deferred
  * shading. Currently only supports 1 color output and a depth buffer.
@@ -40,6 +42,10 @@ public:
 	 */
 	void Bind() const;
 
+	/* Unbind the framebuffer. Use the window framebuffer.
+	 */
+	void Unbind() const;
+
 	/* After rendering to this framebuffer object the output may be used in
 	 * another rendering pass via a texture. This method will bind the output
 	 * from this framebuffer object to a texture unit which can be used by
@@ -58,7 +64,7 @@ private:
 
 private:
 	GLuint m_fbo; // OGL framebuffer
-	GLuint m_tex; // OGL texture (framebuffer color attachment 0)
+	GLuint m_tex[NUM_BUFFERS]; // OGL texture (framebuffer color attachment 0)
 	GLuint m_rbo; // OGL renderbuffer (framebuffer's depth buffer)
 	int m_width;  // Framebuffer width
 	int m_height; // Framebuffer height
