@@ -87,6 +87,10 @@ public:
 	 */
 	bool IsValid() const;
 
+	void Bind() const;
+
+	void Unbind() const;
+
 	/* Returns the OpenGL program object. Use in the call to glUseProgram().
 	 * If unable to successfully create a program object this method will
 	 * return 0.

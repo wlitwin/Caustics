@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <cassert>
 
 using std::string;
 using std::fstream;
@@ -46,6 +47,26 @@ Shader::~Shader()
 bool Shader::IsValid() const
 {
 	return m_program > 0;
+}
+
+//=============================================================================
+// Bind
+//=============================================================================
+
+void Shader::Bind() const
+{
+	assert(IsValid());
+
+	glUseProgram(m_program);
+}
+
+//=============================================================================
+// Unbind
+//=============================================================================
+
+void Shader::Unbind() const
+{
+	glUseProgram(0);
 }
 
 //=============================================================================
