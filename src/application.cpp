@@ -42,7 +42,8 @@ void Application::SetResolution(const int width, const int height)
 	m_width = width;
 	m_height = height;
 
-	m_framebuffer.Create(width, height);
+	m_fbWorld.Create(width, height);
+	m_fbSurface.Create(width, height);
 }
 
 //=============================================================================
@@ -57,8 +58,8 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 	m_camera = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
 	m_camera->LookAt(glm::vec3(2, 20, 20), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -94,6 +95,13 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 				glm::vec3(-0.5, -0.5,  0.5), glm::vec3(-0.5, -0.5, -0.5));
 
 	box.Finish();
+
+	quad.NewMesh();
+
+	quad.AddQuad(glm::vec3(-1.0, -1.0, 0.0), glm::vec3( 1.0, -1.0, 0.0),
+				 glm::vec3( 1.0,  1.0, 0.0), glm::vec3(-1.0,  1.0, 0.0));
+
+	quad.Finish();
 
 	// This will be the water surface
 	surface.NewMesh();
@@ -146,7 +154,10 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 	glfwGetMousePos(&m_mouse_x, &m_mouse_y);	
 
 	return m_shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag") &&
-		   m_surfaceShader.LoadShaders("glsl/displace.vert", "glsl/displace.frag");
+		   m_surfaceShader.LoadShaders("glsl/displace.vert", "glsl/displace.frag") &&
+		   m_worldCoordShader.LoadShaders("glsl/world.vert", "glsl/world.frag") &&
+		   m_imageShader.LoadShaders("glsl/image.vert", "glsl/image.frag") &&
+		   m_causticMap.LoadShaders("glsl/causticmap.vert", "glsl/causticmap.frag");
 }
 
 //=============================================================================
@@ -230,41 +241,60 @@ bool Application::Update(const double dt)
 
 void Application::Render()
 {
+	m_fbWorld.Bind();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-
-
-
-	// Setup the camera
-	glUseProgram(m_shaders.GetProgram());
-	glUniformMatrix4fv(m_shaders.GetUniformLocation("proj"),
+	m_worldCoordShader.Bind();
+	m_shaders.Bind();
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("proj"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
-	glUniformMatrix4fv(m_shaders.GetUniformLocation("view"),
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("view"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
-
-	// Setup the object we're drawing
-	glUniformMatrix4fv(m_shaders.GetUniformLocation("model"),
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
 													glm::vec3(10.0, 10.0, 10.0))));
-
 	box.Render();
-
-	glUseProgram(m_surfaceShader.GetProgram());
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_texture);
-
-	//glUniform1i(m_surfaceShader.GetUniformLocation("tex"), 0);
+	m_fbWorld.Unbind();
+	// Render the world to 
+	//m_fbWorld.Bind();
+	//m_worldCoordShader.Bind();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+	m_shaders.Bind();
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("proj"),
+						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("view"),
+						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
+	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("model"),
+						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
+													glm::vec3(10.0, 10.0, 10.0))));
+	box.Render();
+	// Now we need to render the surface to a texture
+	//m_fbSurface.Bind();
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	m_surfaceShader.Bind();
 	glUniformMatrix4fv(m_surfaceShader.GetUniformLocation("proj"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
 	glUniformMatrix4fv(m_surfaceShader.GetUniformLocation("view"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
 	glUniform1f(m_surfaceShader.GetUniformLocation("time"), time);
-
-	// Setup the object we're drawing
 	glUniformMatrix4fv(m_surfaceShader.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
 													glm::vec3(10.0, 10.0, 10.0))));
-
 	surface.Render();
+	//m_fbSurface.Unbind();
+
+	// Do regular rendering
+	//glViewport(0, 0, m_width, m_height);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+
+//	m_causticMap.Bind();
+
+	// Debug window
+	glViewport(0, 0, 128, 80);
+	m_imageShader.Bind();
+	m_fbWorld.BindTexture(GL_TEXTURE0);
+	glUniform1i(m_imageShader.GetUniformLocation("tex"), 0);
+	quad.Render();	
+	
 }
 
 //=============================================================================

@@ -51,6 +51,8 @@ public:
 	 */
 	bool Update(const double dt);
 
+	/* 
+	 */
 	void SetResolution(const int width, const int height);
 
 	/* Render the scene.
@@ -67,10 +69,15 @@ private:
 	int m_mouse_y;
 	Shader m_shaders;
 	Shader m_surfaceShader;
+	Shader m_worldCoordShader;
+	Shader m_imageShader;
+	Shader m_causticMap;
 	GLuint m_texture;
 	Mesh box;
 	Mesh surface;
-	FrameBuffer m_framebuffer;
+	Mesh quad;
+	FrameBuffer m_fbWorld;
+	FrameBuffer m_fbSurface;
 };
 
 #endif
