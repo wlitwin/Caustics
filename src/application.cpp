@@ -142,15 +142,6 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 		return false;
 	}
 	
-	int t = glfwLoadTexture2D("./res/water_disp.tga", 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (t <= 0)
-	{
-		std::cerr << "Couldn't load texture\n";
-		return false;
-	}
-
 	glfwGetMousePos(&m_mouse_x, &m_mouse_y);	
 
 	return m_shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag") &&
