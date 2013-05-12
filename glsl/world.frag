@@ -9,5 +9,5 @@ layout(location = 1) out vec4 normalPos;
 void main()
 {
 	worldPos = vec4(out_vertex, 1.0);
-	normalPos = vec4(out_normal, 1.0);
+	normalPos = normalize(vec4(out_normal, 1.0));
 }

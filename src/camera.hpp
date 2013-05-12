@@ -96,6 +96,8 @@ public:
 						const float near, 
 						const float far);
 
+	glm::vec3 GetPosition() const;
+
 	/* Get the camera's view matrix.
 	 */
 	const glm::mat4& GetView();

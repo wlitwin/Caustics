@@ -1,0 +1,119 @@
+#version 330
+
+uniform mat4 proj;
+uniform mat4 view;
+uniform mat4 model;
+uniform float time;
+
+uniform vec3 light_pos;
+
+layout(location = 0) in vec3 in_vertex;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_texCoord;
+
+uniform sampler2D texReceiverPos;
+uniform sampler2D texSurfacePos;
+uniform sampler2D texSurfaceNorm;
+
+// Forward function declarations
+float calcDisp(vec2 pos);
+vec3  calcNormal();
+
+vec3 estimateIntersection(vec3 v, vec3 r, mat4 vp)
+{
+	vec3 p1 = v + 1.0*r;
+	vec4 texPt = vec4(p1, 1)*vp;
+	vec2 tc = vec2(0.5*(texPt.xy/texPt.w)+vec2(0.5, 0.5));
+	tc.y = 1.0 - tc.y;
+	vec4 recPos = texture2D(texReceiverPos, tc);
+	vec3 p2 = v + distance(v, recPos.xyz)*r;
+	texPt = vec4(p2, 1.0)*vp;
+	tc = vec2(0.5*(texPt.xy/texPt.w)+vec2(0.5, 0.5));
+	tc.y = 1.0 - tc.y;
+
+	return texture2D(texReceiverPos, tc).xyz;
+}
+
+out vec3 out_vertex;
+
+vec3 _refract(vec3 I, vec3 N, float eta)
+{
+	float k = 1.0 - eta*eta*(1.0 - dot(N, I) * dot(N, I));
+	if (k < 0.0)
+		return vec3(0);
+	else
+		return eta*I - (eta*dot(N, I) + sqrt(k))*N;
+}
+
+void main()
+{
+	mat4 vp = proj * view;
+	mat4 mvp = proj * view * model;
+
+	mat4 normalMatrix = transpose(inverse(model));
+	vec3 world_vertex = in_vertex;
+	world_vertex.y += calcDisp(in_texCoord.st);
+	vec3 world_normal = normalize(vec3(normalMatrix*vec4(calcNormal(), 1.0)));
+	world_vertex = vec3(model * vec4(world_vertex, 1.0));
+	//vec3 world_vertex = texture2D(texSurfacePos, in_vertex.st).xyz;
+	//vec3 world_normal = normalize(texture2D(texSurfaceNorm, in_vertex.st)).xyz;
+
+	// Calculate light direction
+	vec3 light_dir = normalize(world_vertex - vec3(2, 20, 20));
+	vec3 point = world_vertex;
+	vec3 r = _refract(light_dir, world_normal, 1.33);
+	for (int i = 0; i < 2; ++i)
+	{
+		point = estimateIntersection(point, light_dir, vp);
+	}
+
+	//point = point + r*1.0;
+
+	out_vertex = point;
+
+	gl_Position = vp*vec4(point, 1.0);
+	//vec4(point, 1.0);
+}
+
+vec3 calcNormal()
+{
+	vec2 t1 = vec2(in_texCoord.x+0.01, in_texCoord.y+0.01);
+	vec2 t2 = vec2(in_texCoord.x-0.01, in_texCoord.y-0.01);
+	vec2 t3 = vec2(in_texCoord.x+0.01, in_texCoord.y-0.01);
+	vec2 t4 = vec2(in_texCoord.x-0.01, in_texCoord.y+0.01);
+
+	float y1 = calcDisp(t1);
+	float y2 = calcDisp(t2);
+	float y3 = calcDisp(t3);
+	float y4 = calcDisp(t4);
+
+	vec3 p1 = vec3(t1.x, y1, t1.y);
+	vec3 p2 = vec3(t2.x, y2, t2.y);
+	vec3 p3 = vec3(t3.x, y3, t3.y);
+	vec3 p4 = vec3(t4.x, y4, t4.y);
+
+	vec3 e1 = p1-p2;
+	vec3 e2 = p3-p2;
+
+	vec3 n1 = cross(e1, e2);
+
+	vec3 e3 = p1-p4;
+	vec3 e4 = p3-p4;
+
+	vec3 n2 = cross(e3, e4);
+
+	return normalize((n1+n2)/2.0);
+}
+
+float calcDisp(vec2 pos)
+{
+	vec2 cPos = -1.0 + 2.0*pos;
+	float cLength = length(cPos);
+
+	float x1 = cLength*14.0-time*4.0;
+	//float m = -sin(x1);
+	float y1 = cos(x1);
+	//float y = (1.0/m)*(x1-0.01)+y1;
+
+	return y1*0.02;
+}

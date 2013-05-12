@@ -16,7 +16,6 @@ out vec3 out_normal;
 out vec2 out_texCoord;
 
 // Forward function declarations
-float snoise(vec2 noise);
 float calcDisp(vec2 pos);
 
 vec3 calcNormal()
@@ -74,7 +73,7 @@ void main()
 	vec3 new_normal = calcNormal();
 
 	// Out variables
-	out_vertex = new_vertex;
+	out_vertex = vec3(model * vec4(new_vertex, 1.0));
 	out_normal = vec3(normalMatrix * vec4(new_normal, 1.0));
 	out_texCoord = in_texCoord;
 

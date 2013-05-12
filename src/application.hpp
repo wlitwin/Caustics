@@ -4,6 +4,7 @@
 #include <GL/gl.h>
 
 #include "mesh.hpp"
+#include "light.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
 #include "framebuffer.hpp"
@@ -72,12 +73,19 @@ private:
 	Shader m_worldCoordShader;
 	Shader m_imageShader;
 	Shader m_causticMap;
+	Shader m_surfaceGeom;
+	Shader m_allShader;
+	Shader m_smoothShader;
 	GLuint m_texture;
 	Mesh box;
 	Mesh surface;
 	Mesh quad;
+	Mesh m_vertexGrid;
 	FrameBuffer m_fbWorld;
 	FrameBuffer m_fbSurface;
+	FrameBuffer m_fbCausticMap;
+	FrameBuffer m_fbCausticSmooth;
+	Camera* m_light;
 };
 
 #endif

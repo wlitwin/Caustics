@@ -149,7 +149,7 @@ int main(void)
 	glfwSetWindowSizeCallback(window_resize);
 
 	// Enter the actual update/render loop
-	glfwSwapInterval(1); // Limit to 60Hz
+	glfwSwapInterval(0); // Limit to 60Hz
 	int frames = 0;
 	double time_passed = 0;
 

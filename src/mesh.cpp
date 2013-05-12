@@ -7,6 +7,7 @@
 //=============================================================================
 
 Mesh::Mesh() : 
+	m_primitiveType(GL_TRIANGLES),
 	m_vao(0), 
 	m_vbo(0)
 { }
@@ -189,6 +190,35 @@ void Mesh::Finish()
 }
 
 //=============================================================================
+// SetPrimitiveType
+//=============================================================================
+
+void Mesh::SetPrimitiveType(GLenum type)
+{
+	assert(type == GL_TRIANGLES || type == GL_POINTS);
+
+	m_primitiveType = type;
+}
+
+//=============================================================================
+// AddPoint
+//=============================================================================
+
+void Mesh::AddPoint(const glm::vec3& point)
+{
+	assert(m_vao == 0);
+	assert(m_vbo == 0);
+
+	// TODO - Create a special VAO for point primitives
+	// so we don't have to add null values
+	addToVector(m_mesh, point);
+	// Dummy normal
+	addToVector(m_mesh, glm::vec3(0.0));
+	// Dummy tex coord
+	addToVector(m_mesh, glm::vec2(0.0));
+}
+
+//=============================================================================
 // NewMesh
 //=============================================================================
 
@@ -202,7 +232,7 @@ void Mesh::Render()
 //	glEnableVertexAttribArray(0);
 //	glEnableVertexAttribArray(1);
 
-	glDrawArrays(GL_TRIANGLES, 0, m_mesh.size());
+	glDrawArrays(m_primitiveType, 0, m_mesh.size());
 
 //	glDisableVertexAttribArray(1);
 //	glDisableVertexAttribArray(0);

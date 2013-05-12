@@ -126,6 +126,8 @@ public:
 				 const glm::vec3& p3, const glm::vec2& t3,
 				 const glm::vec3& p4, const glm::vec2& t4);
 
+	void AddPoint(const glm::vec3& p);
+
 	/* Finishes creation of the mesh. Any changes after this method will not be saved.
 	 * In fact none of the Add* methods should be called after this method. To start
 	 * creation of a new mesh the 'NewMesh()' method should be called, and then the Add*
@@ -146,12 +148,15 @@ public:
 	 */
 	void Render();
 
+	void SetPrimitiveType(GLenum mode);
+
 private:
 	/* Resets the mesh to a clean state.
 	 */
 	void cleanup();
 	
 private:
+	GLenum m_primitiveType;
 	GLuint m_vao; // Vertex array object
 	GLuint m_vbo; // Vertex buffer object
 	std::vector<float> m_mesh; // The vertices/normals/texture coords

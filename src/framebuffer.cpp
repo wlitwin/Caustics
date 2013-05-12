@@ -36,6 +36,17 @@ FrameBuffer::~FrameBuffer()
 // Create
 //=============================================================================
 
+void FrameBuffer::PrepareRender() const
+{
+	Bind();
+	glViewport(0, 0, m_width, m_height);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+//=============================================================================
+// Create
+//=============================================================================
+
 void FrameBuffer::Create(const int width, const int height)
 {
 	assert(width > 0);

@@ -42,6 +42,8 @@ public:
 	 */
 	void Bind() const;
 
+	void PrepareRender() const;
+
 	/* Unbind the framebuffer. Use the window framebuffer.
 	 */
 	void Unbind() const;
@@ -56,6 +58,14 @@ public:
 	 *                 and < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
 	 */
 	void BindTexture(const GLenum textureUnit) const;
+
+	int GetWidth() const {
+		return m_width;
+	}
+
+	int GetHeight() const {
+		return m_height;
+	}
 
 private:
 	/* Cleans up all of the OpenGL allocated buffers

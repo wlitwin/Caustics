@@ -9,7 +9,7 @@ void main()
 	//float stepX = 1.0 / resolution.x;
 	//float stepY = 1.0 / resolution.y;
 
-	out_texCoord = (in_vertex.xy+1.0)/2.0;
+	out_texCoord = (in_vertex.xy+1.0)*0.5;
 
 	gl_Position = vec4(in_vertex, 1.0);	
 }

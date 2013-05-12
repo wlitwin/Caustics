@@ -30,6 +30,7 @@ Application::~Application()
 	if (m_camera != NULL) 
 	{
 		delete m_camera;
+		delete m_light;
 	}
 }
 
@@ -44,26 +45,26 @@ void Application::SetResolution(const int width, const int height)
 
 	m_fbWorld.Create(width, height);
 	m_fbSurface.Create(width, height);
+	m_fbCausticMap.Create(width, height);
+	m_fbCausticSmooth.Create(width, height);
 }
 
 //=============================================================================
 // Initialize 
 //=============================================================================
 
+void create_vertex_grid(Mesh& mesh, const int GRID_SIZE);
 bool Application::Initialize(const int screen_width, const int screen_height)
 {
 	glfwDisable(GLFW_MOUSE_CURSOR);
 
 	const float aspect_ratio = (float)screen_width/screen_height;
 	m_camera = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
-	m_camera->LookAt(glm::vec3(2, 20, 20), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	m_camera->LookAt(glm::vec3(0, 20, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	m_light = new Camera(45.0f, aspect_ratio, 0.1f, 1000.0f);
+	m_light->LookAt(glm::vec3(0, 20, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	glViewport(0, 0, screen_width, screen_height);
 	glEnable(GL_DEPTH_TEST);
 
@@ -133,31 +134,44 @@ bool Application::Initialize(const int screen_width, const int screen_height)
 
 	surface.Finish();
 
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &m_texture);
-	glBindTexture(GL_TEXTURE_2D, m_texture);
-	if (m_texture == 0)
-	{
-		std::cerr << "Error creating OpenGL texture\n";
-		return false;
-	}
-	
-	int t = glfwLoadTexture2D("./res/water_disp.tga", 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (t <= 0)
-	{
-		std::cerr << "Couldn't load texture\n";
-		return false;
-	}
+	// Create the vertex grid for splatting
+	create_vertex_grid(m_vertexGrid, 64);
 
 	glfwGetMousePos(&m_mouse_x, &m_mouse_y);	
 
+	glPointSize(1.0f);
+
 	return m_shaders.LoadShaders("glsl/basic.vert", "glsl/basic.frag") &&
 		   m_surfaceShader.LoadShaders("glsl/displace.vert", "glsl/displace.frag") &&
+		   m_surfaceGeom.LoadShaders("glsl/displace.vert", "glsl/world.frag") &&
 		   m_worldCoordShader.LoadShaders("glsl/world.vert", "glsl/world.frag") &&
 		   m_imageShader.LoadShaders("glsl/image.vert", "glsl/image.frag") &&
-		   m_causticMap.LoadShaders("glsl/causticmap.vert", "glsl/causticmap.frag");
+		   m_causticMap.LoadShaders("glsl/causticmap.vert", "glsl/causticmap.frag") &&
+		   m_allShader.LoadShaders("glsl/all.vert", "glsl/all.frag") &&
+		   m_smoothShader.LoadShaders("glsl/image.vert", "glsl/smooth.frag");
+}
+
+void create_vertex_grid(Mesh& mesh, const int GRID_SIZE)
+{
+	mesh.NewMesh();
+	mesh.SetPrimitiveType(GL_POINTS);	
+
+	const float DY = 1.0f / GRID_SIZE;
+	const float DX = 1.0f / GRID_SIZE;
+	const float DX_OFF = DX*0.5+0.5;
+
+	float ys = 0.0;
+	for (int i = 0; i < GRID_SIZE; ++i)
+	{
+		float xs = 0.0;
+		for (int j = 0; j < GRID_SIZE; ++j) 
+		{
+			mesh.AddPoint(glm::vec3(xs, ys, 0.0f));
+			xs += DX;
+		}
+		ys += DY;
+	}
+	mesh.Finish();
 }
 
 //=============================================================================
@@ -215,13 +229,13 @@ bool Application::Update(const double dt)
 	{
 		m_camera->Yaw(-45.0f * dt);
 	}
+	delta = dt;
+	time += dt;
 
 	// Get mouse delta
 	int new_mouse_x, new_mouse_y;
 	glfwGetMousePos(&new_mouse_x, &new_mouse_y);
 
-	delta = dt;
-	time += dt;
 
 	const int delta_mouse_x = new_mouse_x - m_mouse_x;
 	const int delta_mouse_y = new_mouse_y - m_mouse_y;
@@ -241,35 +255,109 @@ bool Application::Update(const double dt)
 
 void Application::Render()
 {
-	m_fbWorld.Bind();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+	///////////////////////////////////////////////////////////////////////////
+	// Step 1 - Render the scene to a world coord texture
+	///////////////////////////////////////////////////////////////////////////
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	m_fbWorld.PrepareRender();
 	m_worldCoordShader.Bind();
-	m_shaders.Bind();
 	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("proj"),
-						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
+						1, GL_FALSE, glm::value_ptr(m_light->GetProj()));
 	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("view"),
-						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
+						1, GL_FALSE, glm::value_ptr(m_light->GetView()));
 	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
 													glm::vec3(10.0, 10.0, 10.0))));
 	box.Render();
-	m_fbWorld.Unbind();
-	// Render the world to 
-	//m_fbWorld.Bind();
-	//m_worldCoordShader.Bind();
+
+	///////////////////////////////////////////////////////////////////////////
+	// Step 2 - Render the surface geometry to a texture
+	///////////////////////////////////////////////////////////////////////////
+	glDisable(GL_CULL_FACE);
+	m_fbSurface.PrepareRender();
+	m_surfaceGeom.Bind();
+	glUniformMatrix4fv(m_surfaceGeom.GetUniformLocation("proj"),
+						1, GL_FALSE, glm::value_ptr(m_light->GetProj()));
+	glUniformMatrix4fv(m_surfaceGeom.GetUniformLocation("view"),
+						1, GL_FALSE, glm::value_ptr(m_light->GetView()));
+	glUniform1f(m_surfaceGeom.GetUniformLocation("time"), time);
+	glUniformMatrix4fv(m_surfaceGeom.GetUniformLocation("model"),
+						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
+													glm::vec3(10.0, 10.0, 10.0))));
+	surface.Render();
+
+	///////////////////////////////////////////////////////////////////////////
+	// Step 3 - Create the caustic map texture
+	///////////////////////////////////////////////////////////////////////////
+	m_fbCausticMap.PrepareRender();
+	m_causticMap.Bind();
+	glUniformMatrix4fv(m_causticMap.GetUniformLocation("proj"),
+						1, GL_FALSE, glm::value_ptr(m_light->GetProj()));
+	glUniformMatrix4fv(m_causticMap.GetUniformLocation("view"),
+						1, GL_FALSE, glm::value_ptr(m_light->GetView()));
+
+	const glm::vec3 lightPos(m_light->GetPosition());
+	glUniform3f(m_causticMap.GetUniformLocation("light_pos"), 
+					lightPos.x, lightPos.y, lightPos.z);
+
+	// Bind all of the textures
+	m_fbWorld.BindTexture(GL_TEXTURE0);
+	m_fbSurface.BindTexture(GL_TEXTURE4);
+
+	glUniform1i(m_causticMap.GetUniformLocation("texReceiverPos"), 0);
+	glUniform1i(m_causticMap.GetUniformLocation("texSurfacePos"), 4);
+	glUniform1i(m_causticMap.GetUniformLocation("texSurfaceNorm"), 5);
+	//glUniform1f(m_causticMap.GetUniformLocation("time"), time);
+
+	m_vertexGrid.Render();
+//	surface.Render();	
+	///////////////////////////////////////////////////////////////////////////
+	// Step 4 - Smooth the caustic map
+	///////////////////////////////////////////////////////////////////////////
+	
+	m_fbCausticSmooth.PrepareRender();
+	m_smoothShader.Bind();	
+
+	m_fbCausticMap.BindTexture(GL_TEXTURE0);
+	glUniform1i(m_smoothShader.GetUniformLocation("tex"), 0);
+
+	glUniform2f(m_smoothShader.GetUniformLocation("resolution"), 
+			m_fbCausticSmooth.GetWidth(),
+			m_fbCausticSmooth.GetHeight());
+
+	quad.Render();
+	m_fbCausticSmooth.Unbind();
+
+	///////////////////////////////////////////////////////////////////////////
+	// Do regular rendering
+	///////////////////////////////////////////////////////////////////////////
+
+	glViewport(0, 0, m_width, m_height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-	m_shaders.Bind();
-	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("proj"),
+	glEnable(GL_CULL_FACE);
+	m_allShader.Bind();
+	m_fbCausticSmooth.BindTexture(GL_TEXTURE0);
+	glUniformMatrix4fv(m_allShader.GetUniformLocation("proj"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
-	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("view"),
+	glUniformMatrix4fv(m_allShader.GetUniformLocation("view"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
-	glUniformMatrix4fv(m_worldCoordShader.GetUniformLocation("model"),
+	glUniformMatrix4fv(m_allShader.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
 													glm::vec3(10.0, 10.0, 10.0))));
+	glm::mat4 l_vp = m_light->GetProj() * m_light->GetView();
+	glUniformMatrix4fv(m_allShader.GetUniformLocation("light_vp"), 
+						1, GL_FALSE, glm::value_ptr(l_vp));
+				
+	glUniform3f(m_allShader.GetUniformLocation("light_pos"), 
+					lightPos.x, lightPos.y, lightPos.z);
+				
+	glUniform1i(m_allShader.GetUniformLocation("texCaustics"), 0);
 	box.Render();
-	// Now we need to render the surface to a texture
-	//m_fbSurface.Bind();
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_surfaceShader.Bind();
 	glUniformMatrix4fv(m_surfaceShader.GetUniformLocation("proj"),
 						1, GL_FALSE, glm::value_ptr(m_camera->GetProj()));
@@ -279,22 +367,34 @@ void Application::Render()
 	glUniformMatrix4fv(m_surfaceShader.GetUniformLocation("model"),
 						1, GL_FALSE, glm::value_ptr(glm::scale(glm::mat4(1.0), 
 													glm::vec3(10.0, 10.0, 10.0))));
+	glUniform3f(m_surfaceShader.GetUniformLocation("light_pos"),
+					lightPos.x, lightPos.y, lightPos.z);
 	surface.Render();
-	//m_fbSurface.Unbind();
-
-	// Do regular rendering
-	//glViewport(0, 0, m_width, m_height);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-
-//	m_causticMap.Bind();
-
-	// Debug window
+	///////////////////////////////////////////////////////////////////////////
+	// Debug windows
+	///////////////////////////////////////////////////////////////////////////
 	glViewport(0, 0, 128, 80);
+	// World
 	m_imageShader.Bind();
 	m_fbWorld.BindTexture(GL_TEXTURE0);
 	glUniform1i(m_imageShader.GetUniformLocation("tex"), 0);
 	quad.Render();	
-	
+	glViewport(128, 0, 128, 80);
+	glUniform1i(m_imageShader.GetUniformLocation("tex"), 1);
+	quad.Render();
+	m_fbSurface.BindTexture(GL_TEXTURE0);
+	// Surface
+	glViewport(256, 0, 128, 80);
+	glUniform1i(m_imageShader.GetUniformLocation("tex"), 0);
+	quad.Render();
+	glViewport(384, 0, 128, 80);
+	glUniform1i(m_imageShader.GetUniformLocation("tex"), 1);
+	quad.Render();
+	// Caustic Map
+	glViewport(512, 0, 640, 320);
+	m_fbCausticMap.BindTexture(GL_TEXTURE0);
+	glUniform1i(m_imageShader.GetUniformLocation("tex"), 0);
+	quad.Render();
 }
 
 //=============================================================================
