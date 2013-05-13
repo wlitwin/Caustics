@@ -54,11 +54,14 @@ float calcDisp(vec2 pos)
 	float cLength = length(cPos);
 
 	float x1 = cLength*14.0-time*4.0;
-	//float m = -sin(x1);
 	float y1 = cos(x1);
-	//float y = (1.0/m)*(x1-0.01)+y1;
 
-	return y1*0.02;
+	vec2 cPos2 = -1.5 + 4.0*pos;
+	float cLength2 = length(cPos2);
+	float x2 = cLength2*6.0-time*8.0;
+	float y2 = cos(x2);
+
+	return ((y1+y2)*0.5)*0.02;
 }
 
 void main()

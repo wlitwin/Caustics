@@ -66,6 +66,8 @@ public:
 	 */
 	void Pitch(const float amount);
 
+	glm::vec3 GetForward() const;
+
 	/*
 	 */
 	void Rotate(const float yaw, const float pitch, const float roll);

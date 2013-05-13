@@ -64,6 +64,7 @@ float estimateIntersection(vec3 pos, vec3 dir, mat4 vp, int num_iter)
 }
 
 out vec3 out_vertex;
+out float out_ndotl;
 
 void main()
 {
@@ -87,6 +88,7 @@ void main()
 	//point = point + r*10.0;
 
 	out_vertex = point;
+	out_ndotl = dot(world_normal, -light_dir);
 
 	gl_Position = vp*vec4(point, 1.0);
 	//vec4(point, 1.0);

@@ -2,6 +2,7 @@
 
 uniform sampler2D tex;
 uniform vec2 resolution;
+uniform float vert_blur;
 
 in vec2 out_texCoord;
 
@@ -11,7 +12,6 @@ float sigma = 4;
 
 const float PI = 3.1415926;
 const float numBlurPixelsPerSize = 4.0f;
-const vec2 blurMultiplyVec = vec2(0.0, 1.0);
 
 void main()
 {
@@ -19,6 +19,13 @@ void main()
 	float py = 1.0 / resolution.y;
 
 	float blurSize = px;
+	vec2 blurMultiplyVec = vec2(0.0, 1.0);
+
+	if (vert_blur > 0)
+	{
+		blurSize = py;
+		blurMultiplyVec = vec2(1.0, 0.0);
+	}
 
 	vec3 incrementalGaussian;
 	incrementalGaussian.x = 1.0 / (sqrt(2.0f * PI) * sigma);
@@ -38,6 +45,7 @@ void main()
 									blurMultiplyVec) * incrementalGaussian.x;
 		avgValue += texture2D(tex, out_texCoord+i*blurSize*
 									blurMultiplyVec) * incrementalGaussian.x;
+		coefficientSum += 2* incrementalGaussian.x;
 		incrementalGaussian.xy *= incrementalGaussian.yz;
 	}
 

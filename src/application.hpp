@@ -86,6 +86,7 @@ private:
 	FrameBuffer m_fbCausticMap;
 	FrameBuffer m_fbCausticSmooth;
 	Camera* m_light;
+	GLuint m_query;
 };
 
 #endif

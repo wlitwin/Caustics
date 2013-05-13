@@ -17,12 +17,9 @@ void main()
 
 	vec3 caustic = texture2D(texCaustics, causticCoord).rgb;
 
-	if (caustic != vec3(0))
-	{
-		color = vec4(NdotL*mix(abs(N), caustic, 0.5), 1.0);
-	}
-	else
-	{
-		color = vec4(NdotL*abs(N), 1.0);
-	}
+	vec3 cornflower_blue = vec3(0.390625, 0.58203125, 0.92678125);
+
+	vec3 ambient = cornflower_blue*0.1;
+
+	color = vec4(NdotL*cornflower_blue + ambient + caustic, 1.0);
 }
